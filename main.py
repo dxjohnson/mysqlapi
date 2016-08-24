@@ -1,8 +1,8 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from resources.mysql_variables import MySQLVariables
-from resources.mysql_users import MySQLUsers, MySQLUsersCreate, MySQLUsersAddIp, MySQLUsersDelete
-from resources.mysql_resources.users_list import MySQLUsersList
+from resources.mysql_users import MySQLUsers, MySQLUsersCreate, MySQLUsersClone, MySQLUsersDelete
+#from resources.mysql_resources.users_list import MySQLUsersList
 
 app = Flask(__name__)
 api = Api(app)
@@ -12,7 +12,7 @@ api = Api(app)
 #api.add_resource(MySQLUsersList, '/mysql/servers/<string:server_host>/<int:server_port>/users')
 api.add_resource(MySQLUsers, '/mysql/users')
 #api.add_resource(MySQLUsersCreate, '/mysql/users/create')
-api.add_resource(MySQLUsersAddIp, '/mysql/users/add')
+api.add_resource(MySQLUsersClone, '/mysql/users/clone')
 api.add_resource(MySQLUsersDelete, '/mysql/users/delete')
 if __name__ == '__main__':
     app.run(debug=True)

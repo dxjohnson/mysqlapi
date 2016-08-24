@@ -1,5 +1,5 @@
 from flask_restful import Resource, request
-from common.mysql_connection import MySQLConnection 
+from mysql.connector import MySQLConnection 
 
 class MySQLVariables(Resource):
 	def __init__(self, host=None, port=None):

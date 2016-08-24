@@ -1,10 +1,12 @@
 from flask_restful import Resource
 import mysql.connector
-import config, string
+import config
+import string
 from flask_restful import reqparse
 
 #Get: Show all users@host
 #Get#User: Show all us
+# set port default to 3306? or allow it to be set in config?
 
 class MySQLUsers(Resource):
 	def get(self):
@@ -103,16 +105,71 @@ class MySQLUsers(Resource):
 			raise
 		return mysql_users, 200
 
-class MySQLUsersCreate(Resource):
-	pass
+	def post(self):
+		# Look at potential defaults and have some configuration for if they are not provided
+		# Example, a password is not required, but a configuration value should be there to require it
+		# Need to add the create user options: https://dev.mysql.com/doc/refman/5.5/en/create-user.html
+		parser = reqparse.RequestParser()
+		parser.add_argument('server', type=unicode, help='Server', required=True)
+		parser.add_argument('port', type=int, help='Port', required=True)
+		parser.add_argument('user', type=unicode, help='User Name', required=True)
+		parser.add_argument('host', type=unicode, help='Source Server', required=True)
+		parser.add_argument('password', type=unicode, help='User Password', required=True)
+		parser.add_argument('grants', type=unicode, help='User Grants', action='append')
 
-class MySQLUsersDelete(Resource):
+		args = parser.parse_args()
+		try:
+			server_host = args['server']
+			server_port = args['port']
+			user = args['user']
+			host = args['host']
+			password = args['password']
+			grants = args['grants']
+		except:
+			raise
+
+		try:
+			cnx = mysql.connector.MySQLConnection(user=config.MYSQL_USER, password=config.MYSQL_PASSWORD, host=server_host, port=server_port)
+			cursor = cnx.cursor()
+		except:
+			raise
+
+		sql = "CREATE USER '%s'@'%s'" % (user, host)
+		if len(password) == 41:
+			sql += " identified by password '%s';" % (password)
+		elif len(password) > 1:
+			# figure out the hashing so not to send password unhashed
+			sql += " identified by '%s';" % (password)
+		else:
+			sql += ";"
+
+		try:
+			cursor.execute(sql)
+		except:
+			raise
+
+		try:
+			if len(grants) > 0:
+				for grant in grants:
+					sql = grant + " TO '%s'@'%s';" % (user, host)
+					cursor.execute(sql)
+		except:
+			sql = "DROP USER '%s'@'%s';" % (user, host)
+			cursor.execute(sql)
+			raise
+		else:
+			cursor.close()
+		return 200
+
+	def put(self):
+		
+
 	def delete(self):
 		parser = reqparse.RequestParser()
 		parser.add_argument('server', type=unicode, help='Server', required=True)
 		parser.add_argument('port', type=int, help='Port', required=True)
-		parser.add_argument('user', type=unicode, help='User to copy', required=True)
-		parser.add_argument('host', type=unicode, help='Host of user to copy', required=True)
+		parser.add_argument('user', type=unicode, help='User to delete', required=True)
+		parser.add_argument('host', type=unicode, help='Host of user to delete', required=True)
 
 		args = parser.parse_args()
 		try:
@@ -132,7 +189,13 @@ class MySQLUsersDelete(Resource):
 		except:
 			raise
 
-class MySQLUsersAddIp(Resource):
+class MySQLUsersCreate(Resource):
+	pass
+
+class MySQLUsersDelete(Resource):
+	pass
+
+class MySQLUsersClone(Resource):
 	def post(self):
 		parser = reqparse.RequestParser()
 		parser.add_argument('server', type=unicode, help='Server', required=True)
